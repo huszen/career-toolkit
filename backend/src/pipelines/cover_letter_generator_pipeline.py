@@ -91,6 +91,7 @@ def run_pipeline(pdf_path: str, job_url:str, output_file_name:str = None):
         logger.info(f"PDF generated: {output_file_path}")
 
         # return output_file_name
+        return output_file_path
 
     except Exception as e:
         logger.error("Pipeline processing execution failed", exc_info=True)
