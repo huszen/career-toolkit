@@ -3,7 +3,7 @@ import re
 import time 
 from typing import Dict, Optional
 
-from src.schemas.job_schema import JobScraperModel, JobContentModel
+from src.schemas.job_description_schema import JobDescriptionModel, JobContentModel
 
 from bs4 import BeautifulSoup
 
@@ -30,8 +30,6 @@ def extract_job_id(url:str) -> str:
 
     raise ValueError(f"Could not extract JobStreet job ID from URL: {url}")
 
-
-
 # Clean excessive whitespace/newlines
 def clean_text(text:str) -> str:
 
@@ -57,12 +55,10 @@ def extract_json_ld(soup: BeautifulSoup) -> Optional[Dict]:
                     for item in data["@graph"]:
                         if item.get("@type") == "JobPosting":
                             return item
-        
         except Exception:
             pass
-    
-    return None
 
+    return None
 
 # Extract meaningful job information from HTML
 def extract_job_content(soup: BeautifulSoup) -> Dict:
@@ -117,7 +113,6 @@ def extract_job_content(soup: BeautifulSoup) -> Dict:
             '[data-testid="job-details"]',
             'article',
             'main'
-
         ]
 
         for selector in selectors:

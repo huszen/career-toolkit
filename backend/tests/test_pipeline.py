@@ -3,7 +3,7 @@ import json
 from unittest.mock import patch, MagicMock
 from src.pipelines.cover_letter_generator_pipeline import run_pipeline
 from src.schemas.cv_schema import CVDataModel, CVContentModel, IdentityModel
-from src.schemas.job_schema import JobContentModel, JobScraperModel
+from backend.src.schemas.job_description_schema import JobContentModel, JobDescriptionModel
 
 class TestCoverLetterPipeline(unittest.TestCase):
 
@@ -34,7 +34,7 @@ class TestCoverLetterPipeline(unittest.TestCase):
             )
         )
 
-        mock_scrape_job.return_value = JobScraperModel(
+        mock_scrape_job.return_value = JobDescriptionModel(
             url="https://id.jobstreet.com/id/job/92036471",
             job_id="92036471",
             timestamp="2026-06-18 16:15:00",

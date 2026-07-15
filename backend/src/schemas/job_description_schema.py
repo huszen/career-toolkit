@@ -22,7 +22,7 @@ class JobContentModel(BaseModel):
         return value
 
 
-class JobScraperModel(BaseModel):
+class JobDescriptionModel(BaseModel):
     url: str
     job_id: str
     timestamp: str

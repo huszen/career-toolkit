@@ -7,12 +7,13 @@ from google import genai
 from src.config import settings, logger
 
 from src.renderers.new_html_renderer import render_cover_letter_html
+from src.schemas.generated_cover_letter_schema import CoverLetterSchema
 
 from src.services.export_pdf_service import export_pdf
 from src.services.json_parser_service import check_and_parse
 from src.services.extract_cv_data_service import extract_cv_data
 from src.services.scrape_job_description_service import scrape_job_description
-from src.services.generate_cover_letter_service import generate_cl, CoverLetterSchema
+from src.services.generate_cover_letter_service import generate_cover_letter
 from src.services.build_cover_letter_generator_prompt_service import build_cover_letter_prompt
 
 from src.utils.filename_utils import build_output_filename
@@ -58,7 +59,7 @@ def run_pipeline(pdf_path: str, job_url:str, output_file_name:str = None):
     # Step 5: LLM Inference
     logger.info("\n[5/7] Sending request to GEMINI API")
     try:
-        response = generate_cl(user_content, system_instruction)
+        response = generate_cover_letter(user_content, system_instruction)
 
         raw_json_output = check_and_parse(response=response)
         logger.debug(f"Raw GEMINI Data Output Payload: {raw_json_output}")

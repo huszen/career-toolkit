@@ -8,14 +8,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from src.schemas.job_schema import JobScraperModel, JobContentModel
+from src.schemas.job_description_schema import JobDescriptionModel, JobContentModel
 from src.scrapers import get_scraper_for_url
 
 def scrape_job_description(
         job_url:str,
         headless:bool = True,
         wait_time:int = 15
-) -> Optional[JobScraperModel]:
+) -> Optional[JobDescriptionModel]:
 
     # dynamically match the url
     parser = get_scraper_for_url(job_url)
@@ -68,7 +68,7 @@ def scrape_job_description(
         # hand off the cleaned html soup to strategy parser
         job_data = parser.extract_content(soup)
 
-        return JobScraperModel(
+        return JobDescriptionModel(
             url = clean_url,
             job_id = job_id,
             timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
