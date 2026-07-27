@@ -17,7 +17,7 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'landing':
-        return <Landing OnGetStarted={() => setCurrentPage('cover-letter')} />;
+        return <Landing onGetStarted={() => setCurrentPage('cover-letter')} />;
       case 'cover-letter':
         return <CoverLetter />;
       case 'dashboard':
@@ -33,12 +33,12 @@ export default function App() {
       case 'signup':
         return <SignUp onNavigate={setCurrentPage} />;
       default:
-        return <Landing OnGetStarted={() => setCurrentPage('cover-letter')} />;
+        return <Landing onGetStarted={() => setCurrentPage('cover-letter')} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-800 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-app-bg text-text-main flex flex-col font-sans">
       {/* Top Navbar */}
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 

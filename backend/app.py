@@ -37,7 +37,7 @@ OUTPUT_CL_DIR = "outputs/generated_cover_letter"
 os.makedirs(TEMP_DIR, exist_ok=True)
 os.makedirs(OUTPUT_CL_DIR, exist_ok=True)
 
-# Mount the output folder so files are accessible at http://127.0.0.1.8000/static/filename.pdf
+# Mount the output folder so files are accessible at http://127.0.0.1:8000/static/filename.pdf
 app.mount("/static", StaticFiles(directory=OUTPUT_CL_DIR), name="static")
 
 
@@ -77,7 +77,8 @@ async def generate_cover_letter(
         download_url = None
         if cover_letter_path and os.path.exists(cover_letter_path):
             filename = os.path.basename(cover_letter_path)
-            download_url = request.url_for("static", path=filename)
+            # download_url = request.url_for("static", path=filename)
+            download_url = str(request.url_for("static", path=filename))
 
         # Return comprehensive response payload including gap analysis data object structures
 

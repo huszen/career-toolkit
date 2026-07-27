@@ -6,14 +6,14 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
   ];
 
   return (
-    // <aside className="w-64 bg-slate-950 border-r border-slate-800 p-4 flex flex-col gap-2 h-[calc(100vh-73px)] sticky top-[73px]">
-    <aside className="w-64 bg-slate-950 border-r border-slate-800 p-4 flex flex-col gap-2">
-      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Features</div>
+    <aside className="w-64 bg-app-bg border-r border-border p-4 flex flex-col gap-2">
+      <div className="text-xs font-semibold text-text-muted uppercase tracking-wider px-3 mb-2">Features</div>
+
       {menuItems.map((item) => (
         <button
           key={item.id}
           onClick={() => setCurrentPage(item.id)}
-          className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${currentPage === item.id ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+          className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition ${currentPage === item.id ? 'bg-primary/20 text-primary border border-primary/30' : 'text-text-muted hover:bg-card-bg hover:text-text-main'}`}
         >
           {item.label}
         </button>
