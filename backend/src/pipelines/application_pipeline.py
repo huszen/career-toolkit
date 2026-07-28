@@ -15,6 +15,8 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
 
     # pipeline execution payload return structure
     pipeline_result = {
+        "job_title":"Unknown Title",
+        "company":"Unknown Company",
         "cover_letter_path":None,
         "gap_analysis_report":None
     }
@@ -32,9 +34,15 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
         # package data into clean pipeline container
         context = ApplicationContext(cv_data=cv_data, job_data=job_data)
 
+        # store metadata in return payload
+        pipeline_result["job_title"] = context.job_data.data.title or "Unknown Title"
+        pipeline_result["company"] = context.job_data.data.company or "Unknown Company"
+
+
         logger.info("-> Context Phase verification successful.")
-        logger.info(f"      Candidate: {context.cv_data.identity.name}")
-        logger.info(f"      Target:{context.job_data.data.title} at {context.job_data.data.company}")
+        logger.info(f"      Candidate Name: {context.cv_data.identity.name}")
+        logger.info(f"      Position: {context.job_data.data.title}")
+        logger.info(f"      Company: {context.job_data.data.company}")
 
     except Exception as e:
         logger.error("Critical Failure during structural context extraction phase", exc_info=True)

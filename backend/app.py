@@ -84,6 +84,8 @@ async def generate_cover_letter(
 
         return {
             "success":True,
+            "job_title":pipeline_result.get("job_title", "Unknown Title"),
+            "company":pipeline_result.get("company", "Unknown Company"),
             "cover_letter_url":download_url,
             "gap_analysis":pipeline_result.get("gap_analysis_report")
         }
@@ -184,6 +186,50 @@ async def update_job_status(
     except Exception as e:
         logger.error(f"Failed to update status for job {job_id} : {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update job status")
+
+@app.delete("/api/jobs/{job_id}")
+async def delete_saved_job(
+    job_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Deletes a saved job entry from Firestore and removes its associated PDF file if present.
+    """
+    try:
+        user_id = current_user["uid"]
+        doc_ref = db.collection("users").document(user_id).collection("saved_jobs").document(job_id)
+
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Job application not found")
+
+        job_data = doc.to_dict()
+        cover_letter_url = job_data.get("cover_letter_url")
+
+        # Cleanup local PDF file from outputs directory if present
+        if cover_letter_url:
+            filename = os.path.basename(cover_letter_url)
+            file_path = os.path.join(OUTPUT_CL_DIR, filename)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Cleaned up local PDF file : {file_path}")
+                except Exception as file_err:
+                    logger.warning(f"Could not remove PDF file : {file_path} : {str(file_err)}")
+
+        # Delete document from firestore
+        doc_ref.delete()
+        logger.info(f"User {user_id} deleted job application {job_id}")
+
+        return {
+            "success":True,
+            "message": "Job application successfully deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete job {job_id} for user {current_user.get('uid')}: {str(e)}")
+        raise HTTPException(status_code = 500, detail="Failed to delete job application")
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
