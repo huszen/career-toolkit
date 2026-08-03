@@ -72,7 +72,7 @@ async def generate_cover_letter(
         if not pipeline_result:
             raise HTTPException(status_code=500, detail="Master Application Pipeline failed execution entirely.")
         
-        cover_letter_path = pipeline_result.get("cover_letter_path")
+        cover_letter_path = pipeline_result.cover_letter_path
 
         # Construct a public endpoint URL instead of forcing an immediate file stream binary transfer
         download_url = None
@@ -85,10 +85,10 @@ async def generate_cover_letter(
 
         return {
             "success":True,
-            "job_title":pipeline_result.get("job_title", "Unknown Title"),
-            "company":pipeline_result.get("company", "Unknown Company"),
+            "job_title":pipeline_result.job_title,
+            "company":pipeline_result.company,
             "cover_letter_url":download_url,
-            "gap_analysis":pipeline_result.get("gap_analysis_report")
+            "gap_analysis":pipeline_result.gap_analysis_report
         }
 
     except Exception as e:

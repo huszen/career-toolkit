@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from src.config import logger
-from src.schemas.pipeline_schemas import ApplicationContext
+from src.schemas.pipeline_schemas import ApplicationContext, PipelineResultModel
 
 # Structural service imports
 from src.services.extract_cv_data_service import extract_cv_data
@@ -14,12 +14,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
     logger.info("=== Starting Master Application Pipeline ===")
 
     # pipeline execution payload return structure
-    pipeline_result = {
-        "job_title":"Unknown Title",
-        "company":"Unknown Company",
-        "cover_letter_path":None,
-        "gap_analysis_report":None
-    }
+    pipeline_result = PipelineResultModel()
 
     # =============================================
     # PHASE 1: Shared Structural Resource Ingestion
@@ -30,14 +25,14 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
 
         logger.info("\n[2/3] Context Phase: Scraping Job Description...")
         job_data = scrape_job_description(job_url=job_url)
-        print(job_data.model_dump())
+        # print(job_data.model_dump())
 
         # package data into clean pipeline container
         context = ApplicationContext(cv_data=cv_data, job_data=job_data)
 
         # store metadata in return payload
-        pipeline_result["job_title"] = context.job_data.data.title or "Unknown Title"
-        pipeline_result["company"] = context.job_data.data.company or "Unknown Company"
+        pipeline_result.job_title = context.job_data.data.title or "Unknown Title"
+        pipeline_result.company = context.job_data.data.company or "Unknown Company"
 
 
         logger.info("-> Context Phase verification successful.")
@@ -57,7 +52,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
     try:
         logger.info("\n[3/3] Workflow Phase: Generating Cover Letter Document...")
         cover_letter_file = run_generate_cover_letter_task(context=context)
-        pipeline_result["cover_letter_path"] = cover_letter_file
+        pipeline_result.cover_letter_path = cover_letter_file
         logger.info("-> Cover Letter Workflow finished succesfully")
     except Exception as e:
         logger.error("Non-critical failure inside Cover Letter task generation", exc_info=True)
@@ -68,7 +63,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
         try:
             logger.info("\n[OPTIONAL] Workflow Phase: Initializing Gap Analysis evaluation...")
             gap_analysis_payload = run_generate_gap_analysis_task(context=context)
-            pipeline_result["gap_analysis_report"] = gap_analysis_payload
+            pipeline_result.gap_analysis_report = gap_analysis_payload
             logger.info("-> Gap Analysis Task Finished successfully.")
         except Exception as e:
             logger.error("Non-critical failure inside Gap Analysis processing", exc_info=True)
