@@ -11,6 +11,7 @@ from src.pipelines.application_pipeline import run_pipeline
 
 from src.config import db, logger
 from src.utils.auth_utils import get_current_user
+from src.utils.text_cleaner import detect_platform_from_url
 from src.schemas.saved_job_schema import SaveJobRequestModel, UpdateJobStatusModel
 from datetime import datetime, timezone
 
@@ -109,6 +110,11 @@ async def save_job_to_dashboard(
 
         # Create a document structure combining user payload with server timestamp
         job_data = payload.model_dump()
+
+        # Detect job platform
+        if not job_data.get("platform"):
+            job_data["platform"] = detect_platform_from_url(payload.job_url)
+
         job_data["created_at"] = datetime.now(timezone.utc).isoformat()
         job_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
@@ -143,6 +149,12 @@ async def get_user_saved_jobs(current_user: dict = Depends(get_current_user)):
         for doc in docs:
             job_dict = doc.to_dict()
             job_dict["id"] = doc.id # Include the firestore document id for frontend mapping
+
+            # SAGEGUARD FOR OLD SAVED JOB DATA
+            if "platform" not in job_dict or not job_dict["platform"]:
+                job_dict["platform"] = detect_platform_from_url(job_dict.get("job_url", ""))
+                
+
             saved_jobs.append(job_dict)
 
         return {

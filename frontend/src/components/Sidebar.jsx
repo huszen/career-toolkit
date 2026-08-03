@@ -1,6 +1,6 @@
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard (Mock)' },
+    { id: 'dashboard', label: 'Dashboard' },
     { id: 'cover-letter', label: 'Cover Letter Generator' },
     { id: 'cv-scorer', label: 'ATS CV Scorer (Mock)' },
   ];

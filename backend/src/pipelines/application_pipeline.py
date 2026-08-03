@@ -30,6 +30,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
 
         logger.info("\n[2/3] Context Phase: Scraping Job Description...")
         job_data = scrape_job_description(job_url=job_url)
+        print(job_data.model_dump())
 
         # package data into clean pipeline container
         context = ApplicationContext(cv_data=cv_data, job_data=job_data)

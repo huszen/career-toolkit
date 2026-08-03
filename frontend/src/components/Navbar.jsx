@@ -26,7 +26,7 @@ export default function Navbar({ currentPage, setCurrentPage }) {
       <div className="flex items-center gap-4 text-sm">
         {/* Navigation Link */}
         <button
-          onClick={() => setCurrentPage('cover-letter')}
+          onClick={() => setCurrentPage('dashboard')}
           className={`px-3 py-1.5 rounded-lg font-medium transition ${
             currentPage === 'cover-letter'
               ? 'bg-primary/20 text-primary border border-primary/30'

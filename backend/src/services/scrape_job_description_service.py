@@ -1,6 +1,8 @@
 import time 
 from typing import Optional
 
+from src.utils.text_cleaner import clean_job_text
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -62,11 +64,16 @@ def scrape_job_description(
         soup = BeautifulSoup(html, "html.parser")
 
         # clean noise tags
-        for tag in soup(["script", "style", "svg", "noscript", "meta", "link"]):
+        for tag in soup(["style", "svg", "noscript", "meta", "link"]):
             tag.decompose()
 
         # hand off the cleaned html soup to strategy parser
         job_data = parser.extract_content(soup)
+
+        # clean text
+        for field in ["title", "company", "location", "description", "requirements"]:
+            if job_data.get(field):
+                job_data[field] = clean_job_text(job_data[field])
 
         return JobDescriptionModel(
             url = clean_url,

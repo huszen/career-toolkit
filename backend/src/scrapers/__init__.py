@@ -1,7 +1,9 @@
 from src.scrapers.jobstreet_scraper import JobStreetScraper
+from src.scrapers.linkedin_scraper import LinkedInScraper
 
 SCRAPER_REGISTRY = [
     JobStreetScraper,
+    LinkedInScraper
 ]
 
 def get_scraper_for_url(url: str):
