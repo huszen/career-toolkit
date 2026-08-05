@@ -20,20 +20,25 @@
 } */
 
 @theme {
-  --color-app-bg: #0d1117;
-  --color-card-bg: #161b22;
-  --color-input-bg: #21262d;
+  /* Backgrounds */
+  --color-app-bg: #090909;
+  --color-card-bg: #111111;
+  --color-input-bg: #181818;
 
-  --color-border: #30363d;
-  --color-border-focus: #58a6ff;
+  /* Borders */
+  --color-border: #2a2a2a;
+  --color-border-focus: #6ee7b7;
 
-  --color-primary: #2f81f7;
-  --color-primary-hover: #1f6feb;
-  --color-primary-disabled: #1b4b91;
+  /* Brand */
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-primary-disabled: #064e3b;
 
-  --color-text-main: #f0f6fc;
-  --color-text-muted: #8b949e;
+  /* Text */
+  --color-text-main: #fafafa;
+  --color-text-muted: #9ca3af;
 
-  --color-success: #3fb950;
-  --color-danger: #f85149;
+  /* Status */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
 }
