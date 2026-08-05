@@ -3,7 +3,7 @@ from src.config import settings
 
 from src.schemas.generated_cover_letter_schema import CoverLetterSchema
 
-def generate_cover_letter(user_content, system_instruction, gemini_model="gemini-2.5-flash"):
+def generate_cover_letter(user_content, system_instruction, gemini_model="gemini-3.5-flash"):
     client = genai.Client(api_key=settings.gemini_api_key)
 
     response = client.models.generate_content(
