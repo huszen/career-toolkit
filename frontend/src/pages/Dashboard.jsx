@@ -5,6 +5,7 @@ import { fetchUserJobs, updateJobStatus, deleteJobFromDashboard, checkFileExists
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import JobCard from '../components/dashboard/JobCard';
 import DeleteConfirmModal from '../components/dashboard/DeleteConfirmModal';
+import ToastNotification from '../components/common/ToastNofitication';
 
 export default function Dashboard() {
   const { currentUser, getToken } = useAuth();
@@ -17,6 +18,9 @@ export default function Dashboard() {
 
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const loadSavedJobs = async () => {
     try {
@@ -76,9 +80,16 @@ export default function Dashboard() {
 
       await deleteJobFromDashboard(jobToDelete.id, token);
 
+      // save deleted job title for toast message before resetting the state
+      const deletedTitle = jobToDelete.title;
+
       // Optimistically update list & close modal
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobToDelete.id));
       setJobToDelete(null);
+
+      // Toast notification trigger
+      setToastMessage(`"${deletedTitle}" deleted successfully.`);
+      setShowToast(true);
     } catch (err) {
       console.error(err);
       alert('Failed to delete job application. Please try again.');
@@ -106,6 +117,9 @@ export default function Dashboard() {
 
       {/* Confirmation Modal */}
       <DeleteConfirmModal isOpen={Boolean(jobToDelete)} jobTitle={jobToDelete?.title || ''} onConfirm={handleConfirmDelete} onCancel={() => setJobToDelete(null)} isDeleting={isDeleting} />
+
+      {/* RENDER FLOATING TOAST NOTIFICATION */}
+      <ToastNotification show={showToast} message={toastMessage} onClose={() => setShowToast(false)} duration={2000} />
     </div>
   );
 }
