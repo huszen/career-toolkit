@@ -8,6 +8,7 @@ import CoverLetterForm from '../components/cover-letter/CoverLetterForm';
 import CollapsedFormSummary from '../components/cover-letter/CollapsedFormSummary';
 import SaveJobBanner from '../components/cover-letter/SaveJobBanner';
 import GapAnalysisReport from '../components/cover-letter/GapAnalysisReport';
+import AuthModal from '../components/auth/AuthModal';
 
 export default function CoverLetterGenerationPage() {
   const { currentUser, getToken } = useAuth();
@@ -22,7 +23,11 @@ export default function CoverLetterGenerationPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Hanldle pipeline generation
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const [saveStatus, setSaveStatus] = useState('idle');
+
+  // Handle pipeline generation
   const handleGenerate = async ({ jobUrl, cvFile, runGapAnalysis }) => {
     setLoading(true);
     setError('');
@@ -30,6 +35,8 @@ export default function CoverLetterGenerationPage() {
     setSaveSuccess(false);
     setCurrentJobUrl(jobUrl);
     setCvFileName(cvFile?.name || 'Uploaded CV');
+
+    setSaveStatus('idle');
 
     try {
       const data = await generateCoverLetter({ jobUrl, cvFile, runGapAnalysis });
@@ -42,14 +49,7 @@ export default function CoverLetterGenerationPage() {
       setLoading(false);
     }
   };
-
-  // Handle saving to dashboard
-  const handleSaveJob = async () => {
-    if (!currentUser) {
-      alert('Please log in to save jobs to your dashboard');
-      return;
-    }
-
+  const executeSaveJob = async () => {
     try {
       setSaving(true);
       const token = await getToken();
@@ -63,14 +63,34 @@ export default function CoverLetterGenerationPage() {
         gap_analysis: result.gap_analysis || null,
       };
 
-      await saveJobToDashboard(payload, token);
-      setSaveSuccess(true);
+      const response = await saveJobToDashboard(payload, token);
+
+      if (response.is_duplicate) {
+        setSaveStatus('duplicate'); // Ubah banner menjadi mode Peringatan Duplikat
+      } else if (response.success) {
+        setSaveStatus('saved'); // Ubah banner menjadi mode Sukses Disimpan
+      }
     } catch (err) {
       console.error('Save Job Error:', err);
-      alert('Failed to save job. Please try again');
+      setError('Failed to save job to dashboard. Please try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle saving to dashboard
+  const handleSaveJob = async () => {
+    if (!currentUser) {
+      // If not login yet, open Auth Modal first
+      setIsAuthModalOpen(true);
+      return;
+    }
+    await executeSaveJob();
+  };
+
+  // callback after user success login in modal
+  const handleAuthSuccess = async () => {
+    await executeSaveJob();
   };
 
   const handleResetForm = () => {
@@ -91,7 +111,7 @@ export default function CoverLetterGenerationPage() {
       {/* Results Section */}
       {result && (
         <div className="space-y-6 animate-in fade-in-50 duration-500">
-          <SaveJobBanner currentUser={currentUser} result={result} onSave={handleSaveJob} saving={saving} saveSuccess={saveSuccess} />
+          <SaveJobBanner currentUser={currentUser} result={result} onSave={handleSaveJob} saving={saving} saveStatus={saveStatus} />
 
           {result.cover_letter_url && (
             <div className="p-6 bg-card-bg border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-text-main shadow-lg">
@@ -121,6 +141,9 @@ export default function CoverLetterGenerationPage() {
           <GapAnalysisReport gapAnalysis={result.gap_analysis} />
         </div>
       )}
+
+      {/* Auth Modal Popup */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onSuccess={handleAuthSuccess} />
     </div>
   );
 }

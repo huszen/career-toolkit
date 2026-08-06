@@ -13,9 +13,11 @@ from src.config import db, logger
 from src.utils.auth_utils import get_current_user
 from src.utils.text_cleaner import detect_platform_from_url
 from src.schemas.saved_job_schema import SaveJobRequestModel, UpdateJobStatusModel
+from src.scrapers import get_scraper_for_url
 from datetime import datetime, timezone
 
 from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 # Initiate App
 app = FastAPI(title="Career Toolkit API")
@@ -111,9 +113,40 @@ async def save_job_to_dashboard(
         # Create a document structure combining user payload with server timestamp
         job_data = payload.model_dump()
 
+        # URL NORMALIZATION AND JOB ID EXTRACTION
+        parser = get_scraper_for_url(payload.job_url)
+        if parser:
+            try:
+                job_id, clean_url = parser.extract_id_and_normalize(payload.job_url)
+                job_data["job_id"] = job_id
+                job_data["job_url"] = clean_url
+            except Exception as e:
+                logger.warning(f"URL Normalization failed during save: {e}")
+                job_data["job_id"] = None
+        else:
+            job_data["job_id"] = None
+
         # Detect job platform
         if not job_data.get("platform"):
-            job_data["platform"] = detect_platform_from_url(payload.job_url)
+            job_data["platform"] = detect_platform_from_url(job_data["job_url"])
+
+        # STRICT DUPLICATE CHECK, REJECT AND IGNORE IF EXISTS
+        if job_data.get("job_id"):
+            # Use FeldFildter to prevent UserWarning from Firestore SDK
+            existing_docs = jobs_collection.where(
+                filter=FieldFilter("job_id", "==", job_data["job_id"])
+            ).limit(1).get()
+
+            if len(existing_docs) > 0:
+                logger.info(f"User {user_id} attempted to save duplicate job_id: {job_data['job_id']}. Request rejected.")
+                
+                # return reponse without changing database
+                return {
+                    "success": False,
+                    "is_duplicate": True,
+                    "job_id": existing_docs[0].id,
+                    "message": "This job is already saved in your dashboard."
+                }
 
         job_data["created_at"] = datetime.now(timezone.utc).isoformat()
         job_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -124,9 +157,10 @@ async def save_job_to_dashboard(
         logger.info(f"User {user_id} saved_job {doc_ref.id} ({payload.job_title} at {payload.company})")
 
         return {
-            "success":True,
-            "job_id":doc_ref.id,
-            "message": "Job Successfully saved to dashboard"
+            "success": True,
+            "is_duplicate": False,
+            "job_id": doc_ref.id,
+            "message": "Job successfully saved to dashboard."
         }
     
     except Exception as e:
