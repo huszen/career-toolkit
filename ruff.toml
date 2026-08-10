@@ -12,4 +12,6 @@ select = [
 ignore = [
     "F401",  # unused import
     "F841",  # unused variable
+    "B904",
+    "B008"
 ]

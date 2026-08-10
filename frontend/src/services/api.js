@@ -67,15 +67,15 @@ export async function updateJobStatus(jobId, newStatus, token) {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ status: newStatus }),
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update job status')
+    throw new Error('Failed to update job status');
   }
-  return response.json()
+  return response.json();
 }
 
 export async function deleteJobFromDashboard(jobId, token) {
@@ -88,6 +88,42 @@ export async function deleteJobFromDashboard(jobId, token) {
 
   if (!response.ok) {
     throw new error('Failed to delete job application');
+  }
+
+  return response.json();
+}
+
+//////////////////////////
+///// CV Profile API /////
+//////////////////////////
+export async function uploadUserCv(cvFile, token) {
+  const formData = new FormData();
+  formData.append('cv_file', cvFile);
+
+  const response = await fetch(`${API_BASE_URL}/cv/upload`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload and parse CV');
+  }
+
+  return response.json();
+}
+
+export async function fetchUserCv(token) {
+  const response = await fetch(`${API_BASE_URL}/cv`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user CV profile');
   }
 
   return response.json();
