@@ -33,41 +33,42 @@ def parse_identity(first_page) -> dict:
         if len(clean_phone) >= 10:
             identity["phone"] = clean_phone
 
-    # links
+    # Links / URIs / Annotations
     if first_page.annots:
         for annot in first_page.annots:
-            uri = annot.get("uri")
+            uri = annot.get("uri", "") if annot else ""
             if not uri:
                 continue
 
             uri_lower = uri.lower()
 
-            # identity linkedin link
+            # LinkedIn URL
             if "linkedin.com" in uri_lower:
                 identity["linkedin"] = uri
-            # identify website if exist
-            else:
-                # blacklist common messaging or non-website links
-                blacklist = ["wa.me", "whatsapp.com", "t.me", "mailto:", "tel:"]
-                is_blacklisted = any(item in uri_lower for item in blacklist)
 
-                if not is_blacklisted and identity["website"] == "Not Found":
+            # Website URL
+            elif not any(
+                item in uri_lower
+                for item in ["wa.me", "whatsapp", "t.me", "mailto:", "tel:"]
+            ):
+                if not identity["website"]:
                     identity["website"] = uri
 
-    # fix fallback, if linkedin is still "Not Found", search for plain text
-    if identity["linkedin"] == "Not Found":
-        # linkedin_text_pattern = r'(https?//)?(www\.)?linkedin\.com/in/[a-zA-A0-9_-]+'
-        linkedin_text_pattern = r"(https?://)?(www\.)?linkedin\.com/in/[a-zA-Z0-9_-]+"
 
-        text_match = re.search(linkedin_text_pattern, top_content)
-        if text_match:
-            matched_url = text_match.group(0)
+    # LinkedIn Regex Fallback
+    if not identity["linkedin"]:
+        linkedin_pattern = re.compile(
+            r"(https?://)?(www\.)?linkedin\.com/in/[a-zA-Z0-9_-]+",
+            re.IGNORECASE,
+        )
 
-            # normalize so it always starts with https://
-            if not matched_url.startswith("http"):
-                matched_url = "https://" + matched_url
+        li_match = linkedin_pattern.search(top_content)
 
-            identity["linkedin"] = matched_url
+        if li_match:
+            url = li_match.group(0)
+            identity["linkedin"] = (
+                url if url.startswith("http") else f"https://{url}"
+            )
 
     # fallback for name
     lines = [l.strip() for l in text.split("\n") if l.strip()]
@@ -139,22 +140,13 @@ def extract_cv_data(pdf_path: str) -> dict:
         section_content = "\n".join(lines[start:end]).strip()
         structured_data[section_name] = section_content
 
-    # Old raw dictionary assembly block
-    # combine identity with sections
-    # final_output = {
-    #     "identity":identity_data,
-    #     "content":structured_data
-    # }
-
     final_output = CVDataModel(identity=IdentityModel(**identity_data), content=CVContentModel(**structured_data))
 
     return final_output
 
 
 if __name__ == "__main__":
-    extract_result = extract_cv_data("other_cv.pdf")
-    file_name = "extract_cv_output.json"
-    with open(file_name, "w", encoding="utf-8") as f:
-        json.dump(extract_result, f, indent=2, ensure_ascii=False)
+    result = extract_cv_data("assets/my_cv.pdf")
+    print(result.model_dump_json(indent=2))
 
     print("Extraction Complete")
