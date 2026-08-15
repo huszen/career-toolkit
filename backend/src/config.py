@@ -8,18 +8,26 @@ from firebase_admin import credentials, firestore
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# ==========================================
+# GLOBAL VARIABLE
+# ==========================================
+TEMP_DIR = "assets/temp_uploads"
+OUTPUT_CL_DIR = "output/generated_cover_letter"
+
+# Ensure they exist on startup
+os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(OUTPUT_CL_DIR, exist_ok=True)
 
 # ==========================================
 # SETTINGS
 # ==========================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 class Settings(BaseSettings):
     gemini_api_key: str
 
-    firebase_credentials_path: Path = Field(
-        default=BASE_DIR / "serviceAccountKey.json"
-    )
+    firebase_credentials_path: Path = Field(default=BASE_DIR / "serviceAccountKey.json")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -71,9 +79,6 @@ if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialized successfully")
     else:
-        logger.warning(
-            f"Firebase service account key not found at "
-            f"{settings.firebase_credentials_path}"
-        )
+        logger.warning(f"Firebase service account key not found at {settings.firebase_credentials_path}")
 
 db = firestore.client()
