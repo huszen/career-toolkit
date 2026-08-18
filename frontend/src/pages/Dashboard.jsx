@@ -12,6 +12,7 @@ import JobCard from '../components/dashboard/JobCard';
 import DeleteConfirmModal from '../components/dashboard/DeleteConfirmModal';
 import ToastNotification from '../components/common/ToastNofitication';
 import IdentityTab from '../components/dashboard/IdentityTab';
+import GapAnalysisModal from '../components/dashboard/GapAnalysisModal';
 
 export default function Dashboard() {
   const { currentUser, getToken } = useAuth();
@@ -34,6 +35,8 @@ export default function Dashboard() {
   // Toast State
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const [selectedGapJob, setSelectedGapJob] = useState(null);
 
   const loadSavedJobs = async () => {
     try {
@@ -214,7 +217,19 @@ export default function Dashboard() {
               )}
             </div>
           ) : (
-            filteredJobs.map((job) => <JobCard key={job.id} job={job} onViewPdf={handleViewPdf} onStatusChange={handleStatusChange} onDelete={handleOpenDeleteModal} isVerifying={verifyingId === job.id} />)
+            filteredJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onViewPdf={handleViewPdf}
+                onStatusChange={handleStatusChange}
+                onDelete={handleOpenDeleteModal}
+                onOpenGapAnalysis={(jobWithGap) => {
+                  setSelectedGapJob(jobWithGap);
+                }}
+                isVerifying={verifyingId === job.id}
+              />
+            ))
           )}
         </div>
       )}
@@ -225,6 +240,8 @@ export default function Dashboard() {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal isOpen={Boolean(jobToDelete)} jobTitle={jobToDelete?.title || ''} onConfirm={handleConfirmDelete} onCancel={() => setJobToDelete(null)} isDeleting={isDeleting} />
 
+      {/* Gap Analysis Modal */}
+      <GapAnalysisModal isOpen={Boolean(selectedGapJob)} job={selectedGapJob} onClose={() => setSelectedGapJob(null)} />
       {/* Toast Feedback */}
       <ToastNotification show={showToast} message={toastMessage} onClose={() => setShowToast(false)} duration={2500} />
     </div>
