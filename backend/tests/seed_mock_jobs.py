@@ -9,7 +9,6 @@ from firebase_admin import credentials, firestore
 # Ensure script can locate project root
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Initialize firebase admin SDK if not already initialized
 SERVICE_ACCOUNT_KEY_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "serviceAccountKey.json",
@@ -21,7 +20,6 @@ if not firebase_admin._apps:
 
 db = firestore.client()
 
-# MOCK DATASETS
 JOB_TITLES = [
     "Frontend Developer (React.js)",
     "Backend Engineer (Python/FastAPI)",
@@ -48,6 +46,15 @@ COMPANIES = [
     "Mandiri Innovation Hub",
     "Grab Indonesia",
     "Telkomsel Digital Labs",
+]
+
+LOCATIONS = [
+    "Jakarta (Hybrid)",
+    "South Jakarta (On-site)",
+    "Remote, Indonesia",
+    "Bandung (Hybrid)",
+    "Yogyakarta (Remote)",
+    "Tangerang (On-site)",
 ]
 
 STATUS_OPTIONS = ["Saved", "Applied", "Interviewing", "Offer", "Rejected"]
@@ -81,6 +88,7 @@ def generate_mock_job(index: int, platform: str) -> dict:
     title = JOB_TITLES[index % len(JOB_TITLES)]
     company = COMPANIES[index % len(COMPANIES)]
     status = random.choice(STATUS_OPTIONS)
+    location = random.choice(LOCATIONS)
 
     if platform == "LinkedIn":
         job_id = f"lk-{random.randint(3000000000, 3999999999)}"
@@ -89,13 +97,29 @@ def generate_mock_job(index: int, platform: str) -> dict:
         job_id = f"js-{random.randint(90000000, 99999999)}"
         job_url = f"https://id.jobstreet.com/id/job/{job_id}"
 
-    match_score = random.randint(65, 95)
-    selected_adv = random.sample(SKILL_ADVANTAGES, k=random.randint(2, 3))
-    selected_dis = random.sample(SKILL_DISADVANTAGES, k=random.randint(1, 2))
-    selected_rec = random.sample(RECOMMENDATIONS, k=random.randint(1, 2))
+    # Spread timestamps across the last 30 days for time-series charts
+    days_ago = random.randint(0, 30)
+    created_dt = datetime.now(UTC) - timedelta(days=days_ago)
+    created_iso = created_dt.isoformat()
 
-    now = datetime.now(UTC) - timedelta(days=random.randint(0, 14))
-    timestamp_iso = now.isoformat()
+    applied_iso = None
+    if status in ["Applied", "Interviewing", "Offer", "Rejected"]:
+        applied_dt = created_dt + timedelta(days=random.randint(0, 3))
+        applied_iso = applied_dt.isoformat()
+
+    # ~80% chance of having gap analysis to test optionality
+    has_gap_analysis = random.random() < 0.8
+    match_score = None
+    gap_analysis = None
+
+    if has_gap_analysis:
+        match_score = random.randint(60, 96)
+        gap_analysis = {
+            "match_score": match_score,
+            "advantages": random.sample(SKILL_ADVANTAGES, k=random.randint(2, 3)),
+            "disadvantages": random.sample(SKILL_DISADVANTAGES, k=random.randint(1, 2)),
+            "recommendations": random.sample(RECOMMENDATIONS, k=random.randint(1, 2)),
+        }
 
     return {
         "job_id": job_id,
@@ -103,20 +127,19 @@ def generate_mock_job(index: int, platform: str) -> dict:
         "job_title": title,
         "company": company,
         "platform": platform,
+        "location": location,
         "status": status,
+        "match_score": match_score,
         "cover_letter_url": None,
-        "gap_analysis": {
-            "match_score": match_score,
-            "advantages": selected_adv,
-            "disadvantages": selected_dis,
-            "recommendations": selected_rec,
-        },
-        "created_at": timestamp_iso,
-        "updated_at": timestamp_iso,
+        "gap_analysis": gap_analysis,
+        "notes": "",
+        "created_at": created_iso,
+        "applied_at": applied_iso,
+        "updated_at": created_iso,
     }
 
 
-def seed_data(user_uid: str, count: int = 10):
+def seed_data(user_uid: str, count: int = 12):
     print(f"\n🚀 Starting seeding process for Target User UID: '{user_uid}'...")
     user_jobs_ref = db.collection("users").document(user_uid).collection("saved_jobs")
 
@@ -128,16 +151,17 @@ def seed_data(user_uid: str, count: int = 10):
         _, doc_ref = user_jobs_ref.add(job_payload)
         seeded_count += 1
         print(
-            f"  [{seeded_count}/{count}] Inserted '{job_payload['job_title']}' at '{job_payload['company']}' (Doc ID: {doc_ref.id})"
-        )  # noqa: E501
+            f"  [{seeded_count}/{count}] Inserted '{job_payload['job_title']}' at '{job_payload['company']}' "
+            f"(Score: {job_payload['match_score']}, Status: {job_payload['status']})"
+        )
 
-    print(f"\n✅ Success! Successfully seeded {seeded_count} mock jobs into user '{user_uid}' dashboard.\n")
+    print(f"\n✅ Success! Seeded {seeded_count} mock jobs into user '{user_uid}' dashboard.\n")
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         target_uid = sys.argv[1]
     else:
-        target_uid = "0pNYNw5kSHZjucaK17ydA7PuVsr1"
+        target_uid = "kk8Cq8JxnbT3DrzLQjy1zjUMw5O2"
 
-    seed_data(user_uid=target_uid, count=10)
+    seed_data(user_uid=target_uid, count=5)

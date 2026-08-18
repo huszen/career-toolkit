@@ -12,7 +12,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # GLOBAL VARIABLE
 # ==========================================
 TEMP_DIR = "assets/temp_uploads"
-OUTPUT_CL_DIR = "output/generated_cover_letter"
+OUTPUT_CL_DIR = "outputs/generated_cover_letter"
 
 # Ensure they exist on startup
 os.makedirs(TEMP_DIR, exist_ok=True)

@@ -38,7 +38,7 @@ async def save_job_to_dashboard(payload: SaveJobRequestModel, current_user: dict
             job_data["job_id"] = None
 
         # Detect job platform
-        if not job_data.get("platform"):
+        if not job_data.get("platform") or job_data["platform"] == "Other":
             job_data["platform"] = detect_platform_from_url(job_data["job_url"])
 
         # STRICT DUPLICATE CHECK, REJECT AND IGNORE IF EXISTS
@@ -59,8 +59,8 @@ async def save_job_to_dashboard(payload: SaveJobRequestModel, current_user: dict
                     "message": "This job is already saved in your dashboard.",
                 }
 
-        job_data["created_at"] = datetime.now(UTC).isoformat()
-        job_data["updated_at"] = datetime.now(UTC).isoformat()
+        # job_data["created_at"] = datetime.now(UTC).isoformat()
+        # job_data["updated_at"] = datetime.now(UTC).isoformat()
 
         # Add to Firestore (returns timestamp and document reference)
         update_time, doc_ref = jobs_collection.add(job_data)
@@ -117,18 +117,19 @@ async def update_job_status(job_id: str, payload: UpdateJobStatusModel, current_
         user_id = current_user["uid"]
         doc_ref = db.collection("users").document(user_id).collection("saved_jobs").document(job_id)
 
-        doc = doc_ref.get()
-        if not doc.exists:
-            raise HTTPException(status_code=404, detail="Job application not found")
+        update_dict = {
+            "status": payload.status,
+            "updated_at": datetime.now(UTC).isoformat(),
+        }
 
-        # Update status and timestamp
-        doc_ref.update({"status": payload.status, "updated_at": datetime.now(UTC).isoformat()})
+        if payload.status == "Applied":
+            update_dict["applied_at"] = datetime.now(UTC).isoformat()
 
-        return {"success": True, "message": f"Status updated to '{payload.status}'."}
-    except HTTPException:
-        raise
+        doc_ref.update(update_dict)
+
+        return {"success": True, "message": f"Job status updated to {payload.status}"}
     except Exception as e:
-        logger.error(f"Failed to update status for job {job_id} : {str(e)}")
+        logger.error(f"Failed to update job status: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update job status")
 
 

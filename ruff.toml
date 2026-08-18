@@ -13,5 +13,7 @@ ignore = [
     "F401",  # unused import
     "F841",  # unused variable
     "B904",
-    "B008"
+    "B008",
+    "UP017", # datetime.UTC
+    "I001",  # organize import
 ]

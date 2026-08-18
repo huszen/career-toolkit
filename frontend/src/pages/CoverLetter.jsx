@@ -79,7 +79,10 @@ export default function CoverLetterGenerationPage() {
         job_url: currentJobUrl,
         job_title: result.job_title || 'Unknown Title',
         company: result.company || 'Unknown Company',
+        platform: result.platform || null,
+        location: result.location || null,
         status: 'Saved',
+        match_score: result.gap_analysis?.match_score ?? result.match_score ?? null,
         cover_letter_url: result.cover_letter_url || null,
         gap_analysis: result.gap_analysis || null,
       };
