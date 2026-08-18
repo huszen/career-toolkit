@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Download, CheckCircle2 } from 'lucide-react';
 
-import { generateCoverLetter, saveJobToDashboard } from '../services/api';
+import { generateCoverLetter, saveJobToDashboard, fetchUserCv } from '../services/api';
 
 import CoverLetterForm from '../components/cover-letter/CoverLetterForm';
 import CollapsedFormSummary from '../components/cover-letter/CollapsedFormSummary';
@@ -13,6 +13,7 @@ import AuthModal from '../components/auth/AuthModal';
 export default function CoverLetterGenerationPage() {
   const { currentUser, getToken } = useAuth();
 
+  const [savedCv, setSavedCv] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -27,6 +28,26 @@ export default function CoverLetterGenerationPage() {
 
   const [saveStatus, setSaveStatus] = useState('idle');
 
+  // Fetch saved CV on page mount or when user state changes
+  useEffect(() => {
+    async function loadSavedCvProfile() {
+      if (currentUser) {
+        try {
+          const token = await getToken();
+          const res = await fetchUserCv(token);
+          if (res?.cv_data) {
+            setSavedCv(res.cv_data);
+          }
+        } catch (err) {
+          console.error('Failed to load user CV Profile', err);
+        }
+      } else {
+        setSavedCv(null);
+      }
+    }
+    loadSavedCvProfile();
+  }, [currentUser]);
+
   // Handle pipeline generation
   const handleGenerate = async ({ jobUrl, cvFile, runGapAnalysis }) => {
     setLoading(true);
@@ -34,12 +55,12 @@ export default function CoverLetterGenerationPage() {
     setResult(null);
     setSaveSuccess(false);
     setCurrentJobUrl(jobUrl);
-    setCvFileName(cvFile?.name || 'Uploaded CV');
-
+    setCvFileName(cvFile ? cvFile.name : `Saved Profile (${savedCv?.identity?.name || 'Default'})`);
     setSaveStatus('idle');
 
     try {
-      const data = await generateCoverLetter({ jobUrl, cvFile, runGapAnalysis });
+      const token = currentUser ? await getToken() : null;
+      const data = await generateCoverLetter({ jobUrl, cvFile, runGapAnalysis }, token);
       setResult(data);
       setIsFormCollapsed(true);
     } catch (err) {
@@ -66,9 +87,9 @@ export default function CoverLetterGenerationPage() {
       const response = await saveJobToDashboard(payload, token);
 
       if (response.is_duplicate) {
-        setSaveStatus('duplicate'); // Ubah banner menjadi mode Peringatan Duplikat
+        setSaveStatus('duplicate'); // Change banner if there is a duplicate
       } else if (response.success) {
-        setSaveStatus('saved'); // Ubah banner menjadi mode Sukses Disimpan
+        setSaveStatus('saved'); // Chenge banner if success
       }
     } catch (err) {
       console.error('Save Job Error:', err);
@@ -105,7 +126,7 @@ export default function CoverLetterGenerationPage() {
       {isFormCollapsed && result ? (
         <CollapsedFormSummary cvFileName={cvFileName} currentJobUrl={currentJobUrl} onEdit={() => setIsFormCollapsed(false)} onReset={handleResetForm} />
       ) : (
-        <CoverLetterForm onSubmit={handleGenerate} loading={loading} error={error} />
+        <CoverLetterForm onSubmit={handleGenerate} loading={loading} error={error} savedCv={savedCv} />
       )}
 
       {/* Results Section */}
@@ -142,7 +163,6 @@ export default function CoverLetterGenerationPage() {
         </div>
       )}
 
-      {/* Auth Modal Popup */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} onSuccess={handleAuthSuccess} />
     </div>
   );

@@ -1,16 +1,21 @@
-from typing import Optional, Dict, Any
+from typing import Any, Optional
+
 from src.config import logger
+
+# Task module imports
+from src.pipelines.tasks.generate_cover_letter_task import run_generate_cover_letter_task
+from src.pipelines.tasks.generate_gap_analysis_task import run_generate_gap_analysis_task
+from src.schemas.cv_schema import CVDataModel
 from src.schemas.pipeline_schemas import ApplicationContext, PipelineResultModel
 
 # Structural service imports
 from src.services.extract_cv_data_service import extract_cv_data
 from src.services.scrape_job_description_service import scrape_job_description
 
-# Task module imports
-from src.pipelines.tasks.generate_cover_letter_task import run_generate_cover_letter_task
-from src.pipelines.tasks.generate_gap_analysis_task import run_generate_gap_analysis_task
 
-def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) -> Optional[Dict[str,Any]]:
+def run_pipeline(
+    pdf_path: str, job_url: str, run_gap_analysis: bool = False, cv_data: CVDataModel | None = None
+) -> dict[str, Any] | None:
     logger.info("=== Starting Master Application Pipeline ===")
 
     # pipeline execution payload return structure
@@ -20,12 +25,18 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
     # PHASE 1: Shared Structural Resource Ingestion
     # =============================================
     try:
-        logger.info("\n[1/3] Context Phase: Extracting CV Content...")
-        cv_data = extract_cv_data(pdf_path=pdf_path)
+        # 1. resoleve CV Data (Direct Injected or Extracted from PDF)
+        if cv_data is None:
+            if not pdf_path:
+                raise ValueError("Neither cv_data nor pdf_path was provided to pipeline")
+            logger.info("\n[1/3] Context Phase: Extracting CV Content from PDF...")
+            cv_data = extract_cv_data(pdf_path=pdf_path)
+        else:
+            logger.info("\n[1/3] Context Phase: Using Pre-Saved CV Profile...")
 
+        # 2. Scrape target Job
         logger.info("\n[2/3] Context Phase: Scraping Job Description...")
         job_data = scrape_job_description(job_url=job_url)
-        # print(job_data.model_dump())
 
         # package data into clean pipeline container
         context = ApplicationContext(cv_data=cv_data, job_data=job_data)
@@ -33,7 +44,6 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
         # store metadata in return payload
         pipeline_result.job_title = context.job_data.data.title or "Unknown Title"
         pipeline_result.company = context.job_data.data.company or "Unknown Company"
-
 
         logger.info("-> Context Phase verification successful.")
         logger.info(f"      Candidate Name: {context.cv_data.identity.name}")
@@ -47,7 +57,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
     # =============================================
     # PHASE 2: Downstream Multi-Task Execution Loop
     # =============================================
-    
+
     # Task A: Cover Letter Generation (Core Engine Block)
     try:
         logger.info("\n[3/3] Workflow Phase: Generating Cover Letter Document...")
@@ -57,8 +67,7 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
     except Exception as e:
         logger.error("Non-critical failure inside Cover Letter task generation", exc_info=True)
 
-
-    # Task B: Gap Analysis Verification Block (Optional Toggle) 
+    # Task B: Gap Analysis Verification Block (Optional Toggle)
     if run_gap_analysis:
         try:
             logger.info("\n[OPTIONAL] Workflow Phase: Initializing Gap Analysis evaluation...")
@@ -67,7 +76,6 @@ def run_pipeline(pdf_path: str, job_url: str, run_gap_analysis: bool = False) ->
             logger.info("-> Gap Analysis Task Finished successfully.")
         except Exception as e:
             logger.error("Non-critical failure inside Gap Analysis processing", exc_info=True)
-
 
     logger.info("\=== Master Application Pipeline Run Finished ===")
     return pipeline_result

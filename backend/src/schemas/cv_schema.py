@@ -1,13 +1,15 @@
-from pydantic import BaseModel, Field, EmailStr, HttpUrl, model_validator
 from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, model_validator
+
 
 class IdentityModel(BaseModel):
     # if regex fails, we keep "Not Found" string fallback, or use None
-    name: Optional[str] = Field(default="Not Found")
-    email: Optional[EmailStr] = Field(default=None)
-    phone: Optional[str] = Field(default="Not Found")
-    linkedin: Optional[HttpUrl] = Field(default=None)
-    website: Optional[HttpUrl] = Field(default=None)
+    name: str | None = Field(default="Not Found")
+    email: EmailStr | None = Field(default=None)
+    phone: str | None = Field(default="Not Found")
+    linkedin: HttpUrl | None = Field(default=None)
+    website: HttpUrl | None = Field(default=None)
 
     @model_validator(mode="after")
     def check_minimal_identity(self) -> "IdentityModel":
@@ -23,6 +25,7 @@ class IdentityModel(BaseModel):
 
         return self
 
+
 class CVContentModel(BaseModel):
     summary: str = Field(default="")
     experience: str = Field(default="")
@@ -32,7 +35,7 @@ class CVContentModel(BaseModel):
     projects: str = Field(default="")
     training: str = Field(default="")
 
+
 class CVDataModel(BaseModel):
     identity: IdentityModel
     content: CVContentModel
-
