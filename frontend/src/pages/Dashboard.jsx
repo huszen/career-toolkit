@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+
 import { useAuth } from '../context/AuthContext';
+
 import { fetchUserJobs, updateJobStatus, deleteJobFromDashboard, checkFileExists, fetchUserCv, uploadUserCv } from '../services/api';
 
-import { User, Bookmark, Briefcase, ChartBar, BarChart } from 'lucide-react';
+import { UserCircle, Briefcase, Search, PlusCircle } from 'lucide-react';
+// import { Link } from 'react-router-dom';
 
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import JobCard from '../components/dashboard/JobCard';
@@ -14,17 +17,17 @@ export default function Dashboard() {
   const { currentUser, getToken } = useAuth();
 
   // Active Tab State
-  const [activeTab, setActiveTab] = useState('saved_jobs');
+  const [activeTab, setActiveTab] = useState('tracker');
 
   const [jobs, setJobs] = useState([]);
-  const [cvData, setCvData] = useState([]);
+  const [cvData, setCvData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [uploadingCv, setUploadingCv] = useState(false);
   const [error, setError] = useState('');
 
   const [verifyingId, setVerifyingId] = useState(null);
-
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -146,78 +149,83 @@ export default function Dashboard() {
       setIsDeleting(false);
     }
   };
+  // Filter jobs by search query
+  const filteredJobs = jobs.filter((job) => job.job_title?.toLowerCase().includes(searchQuery.toLowerCase()) || job.company?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-4 text-text-main space-y-6">
-      <DashboardHeader userEmail={currentUser?.email} onRefresh={loadDashboardData} />
+    <div className="max-w-5xl mx-auto mt-8 p-4 text-text-main space-y-6">
+      {/* Top Header with Global Analytics */}
+      <DashboardHeader userEmail={currentUser?.email} onRefresh={loadDashboardData} jobs={jobs} hasCv={Boolean(cvData)} />
 
-      {error && <div className="p-3 bg-danger/10 border border-danger/30 rounded-lg text-danger text-sm">{error}</div>}
+      {error && <div className="p-3.5 bg-danger/10 border border-danger/30 rounded-xl text-danger text-xs font-medium">{error}</div>}
 
-      {/* TABS NAVIGATION */}
-      <div className="flex items-center gap-2 border-b border-border pb-1">
-        <button
-          onClick={() => setActiveTab('identity')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'identity' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
-          }`}
-        >
-          <User className="w-4 h-4" />
-          Identity
-        </button>
+      {/* 2-Tab Navigation Bar */}
+      <div className="flex items-center justify-between border-b border-border/80 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('tracker')}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'tracker' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            Job Tracker ({jobs.length})
+          </button>
 
-        <button
-          onClick={() => setActiveTab('saved_jobs')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'saved_jobs' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
-          }`}
-        >
-          <Bookmark className="w-4 h-4" />
-          Saved Jobs ({jobs.length})
-        </button>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'profile' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
+            }`}
+          >
+            <UserCircle className="w-3.5 h-3.5" />
+            CV & Profile
+          </button>
+        </div>
 
-        <button
-          onClick={() => setActiveTab('graph')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-            activeTab === 'graph' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
-          }`}
-        >
-          <ChartBar className="w-4 h-4" />
-          Graph
-        </button>
+        {activeTab === 'tracker' && jobs.length > 0 && (
+          <div className="relative hidden sm:block">
+            <Search className="w-3.5 h-3.5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by title or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-input-bg border border-border rounded-xl text-xs text-text-main placeholder:text-text-muted focus:outline-none focus:border-border-focus transition w-56"
+            />
+          </div>
+        )}
       </div>
 
-      {loading && <div className="text-center py-10 text-text-muted text-sm">Loading dashboard content...</div>}
+      {loading && <div className="text-center py-16 text-text-muted text-xs">Loading dashboard content...</div>}
 
-      {/* TAB CONTENT: IDENTITY */}
-      {!loading && activeTab === 'identity' && <IdentityTab cvData={cvData} onUploadCv={handleUploadCv} uploading={uploadingCv} />}
-
-      {/* TAB CONTENT: SAVED JOBS */}
-      {!loading && activeTab === 'saved_jobs' && (
+      {/* TAB 1: JOB TRACKER */}
+      {!loading && activeTab === 'tracker' && (
         <div className="space-y-4">
-          {jobs.length === 0 ? (
-            <div className="text-center py-12 bg-card-bg rounded-2xl border border-border p-6 space-y-2">
-              <p className="text-text-main font-medium">No saved jobs found.</p>
-              <p className="text-xs text-text-muted">Generate cover letters or analyze job descriptions and save them to track them here!</p>
+          {filteredJobs.length === 0 ? (
+            <div className="text-center py-14 bg-card-bg rounded-2xl border border-border p-6 space-y-3">
+              <p className="text-sm font-semibold text-text-main">{jobs.length === 0 ? 'No tracked jobs yet' : 'No matching jobs found'}</p>
+              <p className="text-xs text-text-muted max-w-sm mx-auto">{jobs.length === 0 ? 'Analyze job posts or generate cover letters to track your applications here.' : 'Try adjusting your search query.'}</p>
+              {jobs.length === 0 && (
+                <a href="/cover-letter" className="inline-flex items-center gap-1.5 px-4 py-2 bg-input-bg hover:bg-border text-xs font-semibold text-primary rounded-xl border border-border transition-colors mt-2">
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Analyze New Job Post
+                </a>
+              )}
             </div>
           ) : (
-            jobs.map((job) => <JobCard key={job.id} job={job} onViewPdf={handleViewPdf} onStatusChange={handleStatusChange} onDelete={handleOpenDeleteModal} isVerifying={verifyingId === job.id} />)
+            filteredJobs.map((job) => <JobCard key={job.id} job={job} onViewPdf={handleViewPdf} onStatusChange={handleStatusChange} onDelete={handleOpenDeleteModal} isVerifying={verifyingId === job.id} />)
           )}
         </div>
       )}
 
-      {/* TAB CONTENT: APPLICATION TRACKS */}
-      {!loading && activeTab === 'graph' && (
-        <div className="text-center py-12 bg-card-bg rounded-2xl border border-border p-6 space-y-2">
-          <BarChart className="w-8 h-8 text-text-muted mx-auto mb-2" />
-          <p className="text-text-main font-medium">No data available yet.</p>
-          <p className="text-xs text-text-muted">Track your interview stages and response timelines here in upcoming updates.</p>
-        </div>
-      )}
+      {/* TAB 2: CV & PROFILE */}
+      {!loading && activeTab === 'profile' && <IdentityTab cvData={cvData} onUploadCv={handleUploadCv} uploading={uploadingCv} />}
 
-      {/* Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       <DeleteConfirmModal isOpen={Boolean(jobToDelete)} jobTitle={jobToDelete?.title || ''} onConfirm={handleConfirmDelete} onCancel={() => setJobToDelete(null)} isDeleting={isDeleting} />
 
-      {/* Toast Notification */}
+      {/* Toast Feedback */}
       <ToastNotification show={showToast} message={toastMessage} onClose={() => setShowToast(false)} duration={2500} />
     </div>
   );
