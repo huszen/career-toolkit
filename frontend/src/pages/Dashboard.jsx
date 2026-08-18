@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 import { fetchUserJobs, updateJobStatus, deleteJobFromDashboard, checkFileExists, fetchUserCv, uploadUserCv } from '../services/api';
 
-import { UserCircle, Briefcase, Search, PlusCircle } from 'lucide-react';
+import { UserCircle, Briefcase, Search, PlusCircle, BarChart3 } from 'lucide-react';
 // import { Link } from 'react-router-dom';
 
 import DashboardHeader from '../components/dashboard/DashboardHeader';
@@ -13,6 +13,7 @@ import DeleteConfirmModal from '../components/dashboard/DeleteConfirmModal';
 import ToastNotification from '../components/common/ToastNofitication';
 import IdentityTab from '../components/dashboard/IdentityTab';
 import GapAnalysisModal from '../components/dashboard/GapAnalysisModal';
+import AnalyticsTab from '../components/dashboard/AnalyticsTab';
 
 export default function Dashboard() {
   const { currentUser, getToken } = useAuth();
@@ -162,9 +163,10 @@ export default function Dashboard() {
 
       {error && <div className="p-3.5 bg-danger/10 border border-danger/30 rounded-xl text-danger text-xs font-medium">{error}</div>}
 
-      {/* 2-Tab Navigation Bar */}
+      {/* Tabs Navigation */}
       <div className="flex items-center justify-between border-b border-border/80 pb-2">
         <div className="flex items-center gap-2">
+          {/* Tab 1: Tracker */}
           <button
             onClick={() => setActiveTab('tracker')}
             className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
@@ -175,6 +177,18 @@ export default function Dashboard() {
             Job Tracker ({jobs.length})
           </button>
 
+          {/* Tab 2: Analytics */}
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === 'analytics' ? 'bg-primary text-text-main shadow-sm' : 'text-text-muted hover:text-text-main hover:bg-input-bg'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Analytics
+          </button>
+
+          {/* Tab 3: CV & Profile */}
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
@@ -234,7 +248,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* TAB 2: CV & PROFILE */}
+      {/* TAB 2: ANALYTICS */}
+      {!loading && activeTab === 'analytics' && <AnalyticsTab jobs={jobs} />}
+
+      {/* TAB 3: CV & PROFILE */}
       {!loading && activeTab === 'profile' && <IdentityTab cvData={cvData} onUploadCv={handleUploadCv} uploading={uploadingCv} />}
 
       {/* Delete Confirmation Modal */}

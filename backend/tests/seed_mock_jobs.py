@@ -164,4 +164,4 @@ if __name__ == "__main__":
     else:
         target_uid = "kk8Cq8JxnbT3DrzLQjy1zjUMw5O2"
 
-    seed_data(user_uid=target_uid, count=5)
+    seed_data(user_uid=target_uid, count=50)
