@@ -1,86 +1,46 @@
-import { useAuth } from '../context/AuthContext';
+import { Sparkles, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import UserMenu from './navbar/UserMenu';
 
-export default function Navbar({ currentPage, setCurrentPage }) {
-  const { currentUser, logout } = useAuth();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setCurrentPage('landing');
-    } catch (err) {
-      console.error('Failed to log out:', err);
-    }
-  };
+export default function Navbar({ currentPage, setCurrentPage, isSidebarOpen, setIsSidebarOpen, isMobileDrawerOpen, setIsMobileDrawerOpen }) {
+  const showSidebarToggle = !['landing', 'login', 'signup'].includes(currentPage);
 
   return (
-    <nav className="h-17 bg-app-bg px-6 flex items-center justify-between border-b border-border">
-      {/* Brand Logo */}
-      <div
-        className="text-xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent cursor-pointer"
-        onClick={() => setCurrentPage('landing')}
-      >
-        Career Toolkit
-      </div>
-
-      {/* Navbar Actions */}
-      <div className="flex items-center gap-4 text-sm">
-        {/* Navigation Link */}
-        <button
-          onClick={() => setCurrentPage('dashboard')}
-          className={`px-3 py-1.5 rounded-lg font-medium transition ${
-            currentPage === 'cover-letter'
-              ? 'bg-primary/20 text-primary border border-primary/30'
-              : 'text-text-muted hover:text-text-main'
-          }`}
-        >
-          Cover Letter Tool
-        </button>
-
-        {/* Divider */}
-        <div className="h-4 w-px bg-border" />
-
-        {currentUser ? (
-          <div className="flex items-center gap-4">
-            <span className="text-text-muted hidden md:inline text-xs">
-              {currentUser.email}
-            </span>
-
+    <header className="h-16 bg-app-bg border-b border-border/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 backdrop-blur-md">
+      {/* Left: Sidebar Toggle + Brand Logo */}
+      <div className="flex items-center gap-3 md:gap-4">
+        {showSidebarToggle && (
+          <>
+            {/* Desktop Collapse Toggle */}
             <button
-              onClick={() => setCurrentPage('dashboard')}
-              className={`px-3.5 py-1.5 rounded-lg font-medium transition ${
-                currentPage === 'dashboard'
-                  ? 'bg-primary text-text-main'
-                  : 'bg-input-bg text-text-muted hover:bg-card-bg border border-border'
-              }`}
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              className="hidden lg:flex p-2 text-text-muted hover:text-text-main hover:bg-input-bg rounded-xl border border-transparent hover:border-border transition cursor-pointer"
             >
-              Dashboard
+              {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
             </button>
 
+            {/* Mobile Drawer Toggle */}
             <button
-              onClick={handleLogout}
-              className="text-text-muted hover:text-danger font-medium transition text-xs"
+              onClick={() => setIsMobileDrawerOpen((prev) => !prev)}
+              title="Open Navigation"
+              className="flex lg:hidden p-2 text-text-muted hover:text-text-main hover:bg-input-bg rounded-xl border border-transparent hover:border-border transition cursor-pointer"
             >
-              Log Out
+              <Menu className="w-4 h-4" />
             </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setCurrentPage('login')}
-              className="text-text-muted hover:text-text-main px-3 py-1.5 font-medium transition"
-            >
-              Log In
-            </button>
-
-            <button
-              onClick={() => setCurrentPage('signup')}
-              className="bg-primary hover:bg-primary-hover text-text-main px-3.5 py-1.5 rounded-lg font-medium transition"
-            >
-              Sign Up
-            </button>
-          </div>
+          </>
         )}
+
+        {/* Brand Logo */}
+        <div onClick={() => setCurrentPage('landing')} className="flex items-center gap-2 cursor-pointer group">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-text-main via-text-main to-text-muted bg-clip-text text-transparent">Career Toolkit</span>
+        </div>
       </div>
-    </nav>
+
+      {/* Right: User Menu */}
+      <UserMenu setCurrentPage={setCurrentPage} />
+    </header>
   );
 }

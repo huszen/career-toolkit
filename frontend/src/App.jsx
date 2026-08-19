@@ -14,6 +14,10 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
   const { currentUser } = useAuth();
 
+  // Sidebar layour states
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Desktop collapse state
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false); // Mobile slide drawer
+
   const renderPage = () => {
     switch (currentPage) {
       case 'landing':
@@ -21,7 +25,6 @@ export default function App() {
       case 'cover-letter':
         return <CoverLetter />;
       case 'dashboard':
-        // If user is not logged in, show login page instead of dashboard
         if (!currentUser) {
           return <Login onNavigate={setCurrentPage} />;
         }
@@ -37,18 +40,20 @@ export default function App() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-app-bg text-text-main flex flex-col font-sans">
-      {/* Top Navbar */}
-      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+  const showSidebar = !['landing', 'login', 'signup'].includes(currentPage);
 
-      {/* Main Content Layout */}
-      <div className="flex flex-1">
-        {/* Render Sidebar conditionally: Only if not on landing/login/signup */}
-        {!['landing', 'login', 'signup'].includes(currentPage) && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
+  return (
+    <div className="min-h-screen bg-app-bg text-text-main flex flex-col font-sans selection:bg-primary/20 selection:text-primary">
+      {/* Top Navbar */}
+      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} isMobileDrawerOpen={isMobileDrawerOpen} setIsMobileDrawerOpen={setIsMobileDrawerOpen} />
+
+      {/* Main Layout Body */}
+      <div className="flex flex-1 relative">
+        {/* Render Sidebar conditionally */}
+        {showSidebar && <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} isCollapsed={!isSidebarOpen} isMobileOpen={isMobileDrawerOpen} onCloseMobile={() => setIsMobileDrawerOpen(false)} />}
 
         {/* Dynamic Page Viewer Container */}
-        <main className="flex-1 p-6 max-w-7xl mx-auto w-full">{renderPage()}</main>
+        <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full transition-all duration-300">{renderPage()}</main>
       </div>
     </div>
   );

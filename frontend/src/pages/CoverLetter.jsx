@@ -124,7 +124,7 @@ export default function CoverLetterGenerationPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 my-10 p-4">
+    <div className="max-w-3xl mx-auto space-y-6 p-4">
       {/* Form Section */}
       {isFormCollapsed && result ? (
         <CollapsedFormSummary cvFileName={cvFileName} currentJobUrl={currentJobUrl} onEdit={() => setIsFormCollapsed(false)} onReset={handleResetForm} />
