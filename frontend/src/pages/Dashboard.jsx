@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { useAuth } from '../context/AuthContext';
 
-import { fetchUserJobs, updateJobStatus, deleteJobFromDashboard, checkFileExists, fetchUserCv, uploadUserCv } from '../services/api';
+import { fetchUserJobs, updateJobStatus, deleteJobFromDashboard, checkFileExists, fetchUserCv, uploadUserCv, refineUserCv } from '../services/api';
 
 import { UserCircle, Briefcase, Search, PlusCircle, BarChart3 } from 'lucide-react';
 // import { Link } from 'react-router-dom';
@@ -38,6 +38,9 @@ export default function Dashboard() {
   const [toastMessage, setToastMessage] = useState('');
 
   const [selectedGapJob, setSelectedGapJob] = useState(null);
+
+  // Refining State
+  const [refiningCv, setRefiningCv] = useState(false);
 
   const loadSavedJobs = async () => {
     try {
@@ -153,6 +156,28 @@ export default function Dashboard() {
       setIsDeleting(false);
     }
   };
+
+  // Refine CV Handler
+  const handleRefineCv = async () => {
+    try {
+      setRefiningCv(true);
+      const token = await getToken();
+      const res = await refineUserCv(token);
+
+      if (res.success) {
+        // Immediate UI Swap: updating state triggers re-render of IdentityTab
+        setCvData(res.cv_data);
+        setToastMessage('Profile refined and structured successfully');
+        setShowToast(true);
+      }
+    } catch (err) {
+      console.error('Failed to refine CV:', err);
+      alert(err.message || 'Failed to refine profile. Please try again');
+    } finally {
+      setRefiningCv(false);
+    }
+  };
+
   // Filter jobs by search query
   const filteredJobs = jobs.filter((job) => job.job_title?.toLowerCase().includes(searchQuery.toLowerCase()) || job.company?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -252,7 +277,7 @@ export default function Dashboard() {
       {!loading && activeTab === 'analytics' && <AnalyticsTab jobs={jobs} />}
 
       {/* TAB 3: CV & PROFILE */}
-      {!loading && activeTab === 'profile' && <IdentityTab cvData={cvData} onUploadCv={handleUploadCv} uploading={uploadingCv} />}
+      {!loading && activeTab === 'profile' && <IdentityTab cvData={cvData} onUploadCv={handleUploadCv} uploading={uploadingCv} onRefineCv={handleRefineCv} refining={refiningCv} />}
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal isOpen={Boolean(jobToDelete)} jobTitle={jobToDelete?.title || ''} onConfirm={handleConfirmDelete} onCancel={() => setJobToDelete(null)} isDeleting={isDeleting} />

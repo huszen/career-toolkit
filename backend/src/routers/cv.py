@@ -5,7 +5,9 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from src.config import TEMP_DIR, db, logger
 from src.schemas.cv_schema import CVDataModel
+from src.services.build_refine_profile_prompt import build_refine_profile_prompt
 from src.services.extract_cv_data_service import extract_cv_data
+from src.services.generate_refine_profile_service import generate_refine_profile
 from src.utils.auth_utils import get_current_user
 
 router = APIRouter(prefix="/api/cv", tags=["CV Profile"])
@@ -63,3 +65,54 @@ async def get_user_cv(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Failed to retrieve CV for user {current_user.get('uid')}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve saved CV profile")
+
+
+@router.post("/refine")
+async def refine_user_cv(current_user: dict = Depends(get_current_user)):
+    """
+    Refines the user's existing raw CV content into a structured format using Gemini.
+    Preserves original_cv_data and updates the document with structured_profile.
+    """
+    try:
+        user_id = current_user["uid"]
+        doc_ref = db.collection("users").document(user_id).collection("profile").document("cv_data")
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="No CV profile found. Please upload a CV first.")
+
+        existing_data = doc.to_dict()
+        raw_content = existing_data.get("content", {})
+
+        if not raw_content:
+            raise HTTPException(status_code=400, detail="CV content is empty and cannot be refined.")
+
+        logger.info(f"Triggering CV profile refinement for user {user_id}")
+
+        # 1. Build modular prompt
+        system_instruction, user_content = build_refine_profile_prompt(raw_content)
+
+        # 2. Run AI Refinement Service with separated parameters
+        refined_profile = generate_refine_profile(user_content=user_content, system_instruction=system_instruction)
+        structured_data = refined_profile.model_dump(mode="json")
+
+        print(structured_data)
+        # 3. Non-destructive update: preserve identity & content, only update structured data
+        update_payload = {
+            "structured_profile": structured_data,
+            "refinement_status": "refined",
+            "refined_at": datetime.now(UTC).isoformat(),
+        }
+        doc_ref.update(update_payload)
+
+        # Merge for response
+        existing_data.update(update_payload)
+
+        logger.info(f"Successfully refined profile for user {user_id}")
+
+        return {"success": True, "message": "CV Profile refined successfully", "cv_data": existing_data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to refine CV for user {current_user.get('uid')}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to refine CV profile: {str(e)}")

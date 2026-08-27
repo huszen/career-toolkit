@@ -4,31 +4,6 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api';
 ///// Cover Letter Genration API /////
 //////////////////////////////////////
 
-// export async function generateCoverLetter({ jobUrl, cvFile, runGapAnalysis }, token = null) {
-//   const formData = new FormData();
-//   formData.append('job_url', jobUrl);
-//   formData.append('run_gap_analysis', runGapAnalysis);
-//   if (cvFile) {
-//     formData.append('cv_file', cvFile);
-//   }
-
-//   const headers = {};
-//   if (token) {
-//     headers['Authorization'] = `Bearer ${token}`;
-//   }
-
-//   const response = await fetch(`${API_BASE_URL}/generate-cover-letter`, {
-//     method: 'POST',
-//     headers,
-//     body: formData,
-//   });
-
-//   if (!response.ok) {
-//     const errData = await response.json().catch(() => ({}));
-//     throw new Error(errData.detail || 'Failed to complete the operation pipeline.');
-//   }
-//   return response.json();
-// }
 export async function generateCoverLetter({ jobUrl, cvFile, runGapAnalysis }, token = null) {
   const formData = new FormData();
   formData.append('job_url', jobUrl);
@@ -158,6 +133,22 @@ export async function fetchUserCv(token) {
 
   if (!response.ok) {
     throw new Error('Failed to fetch user CV profile');
+  }
+
+  return response.json();
+}
+
+export async function refineUserCv(token) {
+  const response = await fetch(`${API_BASE_URL}/cv/refine`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || 'Failed to refine CV profile');
   }
 
   return response.json();
