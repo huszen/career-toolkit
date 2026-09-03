@@ -12,7 +12,7 @@ export default function Dashboard() {
   const { state, actions } = useDashboard();
 
   return (
-    <div className="max-w-5xl mx-auto mt-8 p-4 text-text-main space-y-6">
+    <div className="max-w-5xl mx-auto p-4 text-text-main space-y-6">
       <DashboardHeader userEmail={state.currentUser?.email} onRefresh={actions.loadDashboardData} jobs={state.jobs} hasCv={Boolean(state.cvData)} />
 
       {state.error && <div className="p-3.5 bg-danger/10 border border-danger/30 rounded-xl text-danger text-xs font-medium">{state.error}</div>}
