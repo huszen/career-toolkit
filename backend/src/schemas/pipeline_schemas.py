@@ -24,3 +24,4 @@ class PipelineResultModel(BaseModel):
     company: str = Field(default="Unknown Company")
     cover_letter_path: str | None = None
     gap_analysis_report: dict[str, Any] | None = None
+    errors: list[str] = []

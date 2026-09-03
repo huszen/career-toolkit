@@ -4,6 +4,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from src.config import TEMP_DIR, db, logger
 from src.pipelines.application_pipeline import run_pipeline
 from src.schemas.cv_schema import CVDataModel
@@ -51,8 +52,15 @@ async def generate_cover_letter(
         # 3. Run pipeline
         # Run the new multi-task pipeline architecture
         try:
-            pipeline_result = run_pipeline(
-                pdf_path=temp_pdf_path, job_url=job_url, run_gap_analysis=run_gap_analysis, cv_data=resolved_cv_data
+            # pipeline_result = run_pipeline(
+            #     pdf_path=temp_pdf_path, job_url=job_url, run_gap_analysis=run_gap_analysis, cv_data=resolved_cv_data
+            # )
+            pipeline_result = await run_in_threadpool(
+                run_pipeline,
+                pdf_path=temp_pdf_path,
+                job_url=job_url,
+                run_gap_analysis=run_gap_analysis,
+                cv_data=resolved_cv_data,
             )
         finally:
             # Clean up uploaded temporary file
